@@ -1,11 +1,15 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder } = require('discord.js');
-const language = require('./../../language/language_setup.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { getLocalizedMessage, getCommandLocalization } = require('./../../utils/localizations.js');
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('stats')
-        .setDescription(`${language.__n('bot_stats.description')}`),
+    data: (() => {
+        const localization = getCommandLocalization('stats');
+        return new SlashCommandBuilder()
+            .setName(localization.name)
+            .setNameLocalizations(localization.nameLocalizations)
+            .setDescription(localization.description)
+            .setDescriptionLocalizations(localization.descriptionLocalizations);
+    })(),
     async execute(interaction) {
         try {
             await interaction.deferReply();
@@ -16,63 +20,64 @@ module.exports = {
             const minutes = Math.floor(uptime / 60) % 60;
             const seconds = Math.floor(uptime % 60);
             const embed = new EmbedBuilder()
-                .setTitle(`${language.__n('bot_stats.title')}`)
+                .setTitle(`${getLocalizedMessage('stats', 'title', interaction.locale)}`)
                 .setColor('#66ffff')
                 .setFields(
                     {
-                        name: `Bot Ping`,
+                        name: `${getLocalizedMessage('stats', 'ping', interaction.locale)}`,
                         value: `${interaction.client.ws.ping}ms`,
                         inline: true,
                     },
                     {
-                        name: `${language.__n('bot_stats.uptime')}`,
+                        name: `${getLocalizedMessage('stats', 'uptime', interaction.locale)}`,
                         value: `${days}d ${hours}h ${minutes}m ${seconds}s`,
                         inline: true,
                     },
                     {
-                        name: `${language.__n('bot_stats.version')}`,
+                        name: `${getLocalizedMessage('stats', 'version', interaction.locale)}`,
                         value: `v${require('../../../package.json').version}`,
                         inline: true,
                     },
                     {
-                        name: `CPU`,
+                        name: `${getLocalizedMessage('stats', 'cpu', interaction.locale)}`,
                         value: `${(process.cpuUsage().system / 1024 / 1024).toFixed(2)}%`,
                         inline: true,
                     },
                     {
-                        name: `RAM`,
+                        name: `${getLocalizedMessage('stats', 'ram', interaction.locale)}`,
                         value: `${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB`,
                         inline: true,
                     },
                     {
-                        name: `${language.__n('bot_stats.disk_usage')}`,
+                        name: `${getLocalizedMessage('stats', 'disk_usage', interaction.locale)}`,
                         value: `${(process.memoryUsage().external / 1024 / 1024).toFixed(2)} MB`,
                         inline: true,
                     },
                     {
-                        name: `${language.__n('bot_stats.os')}`,
+                        name: `${getLocalizedMessage('stats', 'os', interaction.locale)}`,
                         value: `${process.platform} ${process.arch}`,
                         inline: true,
                     },
                     {
-                        name: `${language.__n('bot_stats.node')}`,
+                        name: `${getLocalizedMessage('stats', 'node', interaction.locale)}`,
                         value: `${process.version}`,
                         inline: true,
                     },
                     {
-                        name: `${language.__n('bot_stats.library')}`,
+                        name: `${getLocalizedMessage('stats', 'library', interaction.locale)}`,
                         value: `Discord.js v${require('discord.js').version}`,
                         inline: true,
                     },
-                );
+                )
+                .setFooter({ text: `Powered by STelliNeX | STNX Teams` });
 
             await interaction.editReply({ embeds: [embed] });
         } catch (error) {
-            console.error(`${language.__n('global.error')}`, error);
+            console.error(getLocalizedMessage('global', 'error'), error);
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply(`${language.__n('global.error_reply')}`);
+                await interaction.editReply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
             } else {
-                await interaction.reply(`${language.__n('global.error_reply')}`);
+                await interaction.reply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
             }
         }
     }

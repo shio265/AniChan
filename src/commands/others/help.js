@@ -1,20 +1,24 @@
-const { SlashCommandBuilder } = require("@discordjs/builders");
-const { EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const fs = require("fs");
 const path = require('path');
-const language = require('./../../language/language_setup.js');
+const { getLocalizedMessage, getCommandLocalization } = require('./../../utils/localizations.js');
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("help")
-        .setDescription(`${language.__n('help.command_description')}`),
+    data: (() => {
+        const localization = getCommandLocalization('help');
+        return new SlashCommandBuilder()
+            .setName(localization.name)
+            .setNameLocalizations(localization.nameLocalizations)
+            .setDescription(localization.description)
+            .setDescriptionLocalizations(localization.descriptionLocalizations);
+    })(),
     async execute(interaction) {
         try {
             await interaction.deferReply();
 
             const embed = new EmbedBuilder()
-                .setTitle(`${language.__n('help.command_title')}`)
-                .setDescription(`${language.__n('help.embed_description')}`)
+                .setTitle(getLocalizedMessage('help', 'command_title', interaction.locale))
+                .setDescription(getLocalizedMessage('help', 'embed_description'))
                 .setTimestamp();
 
             const commandsDirectory = path.join(__dirname, '..');
@@ -33,11 +37,12 @@ module.exports = {
 
             await interaction.editReply({ embeds: [embed], ephemeral: true });
         } catch (error) {
-            console.error(`${language.__n('global.error')}`, error);
+            console.error(getLocalizedMessage('global', 'error'), error);
+            const errorMessage = getLocalizedMessage('global', 'error_reply', interaction.locale);
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply(`${language.__n('global.error_reply')}`);
+                await interaction.editReply(errorMessage);
             } else {
-                await interaction.reply(`${language.__n('global.error_reply')}`);
+                await interaction.reply(errorMessage);
             }
         }
     },

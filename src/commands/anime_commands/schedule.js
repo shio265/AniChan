@@ -1,41 +1,36 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const axios = require('axios');
-const fs = require('fs');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const path = require('path');
-const language = require('./../../language/language_setup.js');
+const { getLocalizedMessage, getCommandLocalization } = require('./../../utils/localizations.js');
+const { queryAnilistFromFile } = require('./../../hook/anilist.js');
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('schedule')
-        .setDescription(`${language.__n('schedule.command_description')}`),
+    data: (() => {
+        const localization = getCommandLocalization('schedule');
+        return new SlashCommandBuilder()
+            .setName(localization.name)
+            .setNameLocalizations(localization.nameLocalizations)
+            .setDescription(localization.description)
+            .setDescriptionLocalizations(localization.descriptionLocalizations);
+    })(),
     async execute(interaction) {
         try {
             await interaction.deferReply();
 
-            const query = fs.readFileSync(path.join(__dirname, '../../queries/schedule.graphql'), 'utf8');
+            const queryPath = path.join(__dirname, '../../queries/schedule.graphql');
             let currentPage = 1;
             const perPage = 10;
             const airingAtGreater = Math.floor(Date.now() / 1000);
 
             const fetchPage = async (page) => {
                 const variables = { page, perPage, airingAtGreater };
-                const response = await axios.post('https://graphql.anilist.co', {
-                    query: query,
-                    variables: variables
-                }, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    }
-                });
-                return response.data.data.Page;
+                const data = await queryAnilistFromFile(queryPath, variables);
+                return data.data.Page;
             };
 
             let pageData = await fetchPage(currentPage);
 
             if (!pageData.airingSchedules.length) {
-                return interaction.editReply(`${language.__n('global.no_results')}`);
+                return interaction.editReply(`${getLocalizedMessage('global', 'no_results', interaction.locale)}`);
             }
 
             const updateEmbed = () => {
@@ -45,20 +40,21 @@ module.exports = {
                 }).join('\n');
 
                 const embed = new EmbedBuilder()
-                    .setTitle(`${language.__n('schedule.airing_schedule')}`)
+                    .setTitle(`${getLocalizedMessage('schedule', 'airing_schedule', interaction.locale)}`)
                     .setDescription(scheduleList)
+                    .setFooter({ text: `${getLocalizedMessage('global', 'page', interaction.locale)}: ${currentPage}` })
                     .setTimestamp();
 
                 const row = new ActionRowBuilder()
                     .addComponents(
                         new ButtonBuilder()
                             .setCustomId('prev')
-                            .setLabel(`${language.__n('global.preview_button')}`)
+                            .setLabel(`${getLocalizedMessage('global', 'preview_button', interaction.locale)}`)
                             .setStyle(ButtonStyle.Primary)
                             .setDisabled(currentPage === 1),
                         new ButtonBuilder()
                             .setCustomId('next')
-                            .setLabel(`${language.__n('global.next_button')}`)
+                            .setLabel(`${getLocalizedMessage('global', 'next_button', interaction.locale)}`)
                             .setStyle(ButtonStyle.Primary)
                             .setDisabled(!pageData.pageInfo.hasNextPage)
                     );
@@ -85,15 +81,15 @@ module.exports = {
                 try {
                     await interaction.editReply({ components: [] });
                 } catch (error) {
-                    console.error(`${language.__n('global.error')}`, error);
+                    console.error(getLocalizedMessage('global', 'error'), error);
                 }
             });
         } catch (error) {
-            console.error(`${language.__n('global.error')}`, error);
+            console.error(getLocalizedMessage('global', 'error'), error);
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply(`${language.__n('global.error_reply')}`);
+                await interaction.editReply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
             } else {
-                await interaction.reply(`${language.__n('global.error_reply')}`);
+                await interaction.reply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
             }
         }
     },

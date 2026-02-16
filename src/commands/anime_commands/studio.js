@@ -1,45 +1,38 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const axios = require('axios');
-const fs = require('fs');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const path = require('path');
-const language = require('./../../language/language_setup.js');
+const { getLocalizedMessage, getCommandLocalization } = require('./../../utils/localizations.js');
+const { queryAnilistFromFile } = require('./../../hook/anilist.js');
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('studio')
-        .setDescription(`${language.__n('studio.command_description')}`)
-        .addStringOption(option => option.setName('name').setDescription(`${language.__n('studio.studio_name')}`).setRequired(true)),
+    data: (() => {
+        const localization = getCommandLocalization('studio');
+        return new SlashCommandBuilder()
+            .setName(localization.name)
+            .setNameLocalizations(localization.nameLocalizations)
+            .setDescription(localization.description)
+            .setDescriptionLocalizations(localization.descriptionLocalizations);
+    })()
+        .addStringOption(option => option.setName('name').setDescription(getLocalizedMessage('studio', 'studio_name')).setRequired(true)),
     async execute(interaction) {
         try {
             await interaction.deferReply();
 
             const studioName = interaction.options.getString('name');
-            const query = fs.readFileSync(path.join(__dirname, '../../queries/studio.graphql'), 'utf8');
+            const queryPath = path.join(__dirname, '../../queries/studio.graphql');
             const variables = { search: studioName };
 
-            const response = await axios.post('https://graphql.anilist.co', {
-                query: query,
-                variables: variables
-            }, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                }
-            });
-
-            const data = response.data;
+            const data = await queryAnilistFromFile(queryPath, variables);
             const studioData = data.data.Studio;
 
             if (!studioData) {
-                return interaction.editReply(`${language.__n('global.no_results')} **${studioName}**`);
+                return interaction.editReply(`${getLocalizedMessage('global', 'no_results', interaction.locale)} **${studioName}**`);
             }
 
             const animeList = studioData.media.nodes.map((anime, index) => {
                 const animeTitle = anime.title.romaji;
                 const animeUrl = anime.siteUrl;
-                const animeYear = anime.startDate ? anime.startDate.year : `${language.__n('global.unavailable')}`;
-                return `${index + 1}. [${animeTitle}](${animeUrl}) - ${language.__n('studio.product_year')}: ${animeYear}`;
+                const animeYear = anime.startDate ? anime.startDate.year : `${getLocalizedMessage('global', 'unavailable', interaction.locale)}`;
+                return `${index + 1}. [${animeTitle}](${animeUrl}) - ${getLocalizedMessage('studio', 'product_year', interaction.locale)}: ${animeYear}`;
             }).join('\n');
 
             const pageSize = 10;
@@ -52,23 +45,28 @@ module.exports = {
                 const displayedAnime = animeList.split('\n').slice(startIdx, endIdx).join('\n');
 
                 const embed = new EmbedBuilder()
-                    .setTitle(`${language.__n('studio.studio_info')} ${studioData.name}`)
+                    .setTitle(`${getLocalizedMessage('studio', 'studio_info', interaction.locale)} ${studioData.name}`)
                     .setURL(studioData.siteUrl)
-                    .setDescription(`${language.__n('studio.product_list')} ${studioData.name}:\n${displayedAnime}`)
+                    .setDescription(`${getLocalizedMessage('studio', 'product_list', interaction.locale)} ${studioData.name}:\n${displayedAnime}`)
+                    .setFooter({ text: `${getLocalizedMessage('global', 'page', interaction.locale)}: ${currentPage + 1}/${totalPages}` })
                     .setTimestamp();
 
                 const row = new ActionRowBuilder()
                     .addComponents(
                         new ButtonBuilder()
                             .setCustomId('prev')
-                            .setLabel(`${language.__n('global.preview_button')}`)
+                            .setLabel(`${getLocalizedMessage('global', 'preview_button', interaction.locale)}`)
                             .setStyle(ButtonStyle.Primary)
                             .setDisabled(currentPage === 0),
                         new ButtonBuilder()
                             .setCustomId('next')
-                            .setLabel(`${language.__n('global.next_button')}`)
+                            .setLabel(`${getLocalizedMessage('global', 'next_button', interaction.locale)}`)
                             .setStyle(ButtonStyle.Primary)
-                            .setDisabled(currentPage === totalPages - 1)
+                            .setDisabled(currentPage === totalPages - 1),
+                        new ButtonBuilder()
+                            .setLabel(getLocalizedMessage('global', 'view_anilist', interaction.locale))
+                            .setURL(studioData.siteUrl)
+                            .setStyle(ButtonStyle.Link)
                     );
 
                 return { embeds: [embed], components: [row] };
@@ -92,15 +90,15 @@ module.exports = {
                 try {
                     await interaction.editReply({ components: [] });
                 } catch (error) {
-                    console.error(`${language.__n('global.error')}`, error);
+                    console.error(getLocalizedMessage('global', 'error'), error);
                 }
             });
         } catch (error) {
-            console.error(`${language.__n('global.error')}`, error);
+            console.error(getLocalizedMessage('global', 'error'), error);
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply(`${language.__n('global.error_reply')}`);
+                await interaction.editReply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
             } else {
-                await interaction.reply(`${language.__n('global.error_reply')}`);
+                await interaction.reply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
             }
         }
     },

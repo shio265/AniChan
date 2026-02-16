@@ -1,40 +1,45 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const axios = require('axios');
-const fs = require('fs');
 const path = require('path');
-const language = require('./../../language/language_setup.js');
+const { getLocalizedMessage, getCommandLocalization } = require('./../../utils/localizations.js');
+const { parseHtmlText } = require('./../../utils/textParser.js');
+const { queryAnilistFromFile } = require('./../../hook/anilist.js');
 const commandCooldown = new Map();
 
 module.exports = {
     cooldown: 60,
-    data: new SlashCommandBuilder()
-        .setName('search')
-        .setDescription(`${language.__n('search.command_description')}`)
+    data: (() => {
+        const localization = getCommandLocalization('search');
+        return new SlashCommandBuilder()
+            .setName(localization.name)
+            .setNameLocalizations(localization.nameLocalizations)
+            .setDescription(localization.description)
+            .setDescriptionLocalizations(localization.descriptionLocalizations);
+    })()
         .addSubcommandGroup(group =>
             group.setName('image')
-                .setDescription(`${language.__n('search.image_option')}`)
+                .setDescription(getLocalizedMessage('search', 'image_option'))
                 .addSubcommand(subcommand =>
                     subcommand.setName('url')
-                        .setDescription(`${language.__n('search.image_link')}`)
+                        .setDescription(getLocalizedMessage('search', 'image_link'))
                         .addStringOption(option =>
                             option.setName('url')
-                                .setDescription(`${language.__n('search.image_link')}`)
+                                .setDescription(getLocalizedMessage('search', 'image_link'))
                                 .setRequired(true))
                         .addBooleanOption(option =>
                             option.setName('cut_black_borders')
-                                .setDescription(`${language.__n('search.cut_black_borders')}`)
+                                .setDescription(getLocalizedMessage('search', 'cut_black_borders'))
                                 .setRequired(true)))
                 .addSubcommand(subcommand =>
                     subcommand.setName('upload')
-                        .setDescription(`${language.__n('search.upload_image')}`)
+                        .setDescription(getLocalizedMessage('search', 'upload_image'))
                         .addAttachmentOption(option =>
                             option.setName('upload')
-                                .setDescription(`${language.__n('search.upload_image')}`)
+                                .setDescription(getLocalizedMessage('search', 'upload_image'))
                                 .setRequired(true))
                         .addBooleanOption(option =>
                             option.setName('cut_black_borders')
-                                .setDescription(`${language.__n('search.cut_black_borders')}`)
+                                .setDescription(getLocalizedMessage('search', 'cut_black_borders'))
                                 .setRequired(true)))),
     async execute(interaction) {
         try {
@@ -59,7 +64,7 @@ module.exports = {
                 if (currentTime - lastUsage < cooldownTime) {
                     const remainingTime = cooldownTime - (currentTime - lastUsage);
                     const remainingMinutes = Math.ceil(remainingTime / (60 * 1000));
-                    return interaction.editReply(`${language.__n('global.tracemoe_api_limit')} ${language.__n('global.retry')} ${remainingMinutes} ${language.__n('global.minute')}.`);
+                    return interaction.editReply(`${getLocalizedMessage('global', 'tracemoe_api_limit', interaction.locale)} ${getLocalizedMessage('global', 'retry', interaction.locale)} ${remainingMinutes} ${getLocalizedMessage('global', 'minute', interaction.locale)}.`);
                 }
             }
 
@@ -74,29 +79,17 @@ module.exports = {
             if (data.result && data.result.length > 0) {
                 const animeid = data.result[0].anilist;
 
-                const query = fs.readFileSync(path.join(__dirname, '../../queries/search.graphql'), 'utf8');
+                const queryPath = path.join(__dirname, '../../queries/search.graphql');
                 const variables = { id: animeid };
-                const graphqlResponse = await axios.post('https://graphql.anilist.co', {
-                    query: query,
-                    variables: variables
-                }, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    }
-                });
+                const graphqlData = await queryAnilistFromFile(queryPath, variables);
 
-                const graphqlData = graphqlResponse.data;
                 const media = graphqlData.data.Media;
                 const animename = media.title.english || media.title.romaji || media.title.native;
                 const embedImage = "https://img.anili.st/media/" + animeid;
-                let description = media.description;
-                if (description && description.length > 400) {
-                    description = description.slice(0, 400) + '...';
-                }
+                const description = parseHtmlText(media.description, 400);
                 const genres = media.genres;
                 if (genres.includes('Ecchi') || genres.includes('Hentai')) {
-                    return interaction.editReply(`**${language.__n('global.nsfw_block')} ${animename}**\n${language.__n('global.nsfw_block_reason')}`);
+                    return interaction.editReply(`**${getLocalizedMessage('global', 'nsfw_block', interaction.locale)} ${animename}**\n${getLocalizedMessage('global', 'nsfw_block_reason', interaction.locale)}`);
                 }
                 const episode = data.result[0].episode;
                 const similarity = (data.result[0].similarity * 100).toFixed(0);
@@ -104,24 +97,32 @@ module.exports = {
                 const embed = new EmbedBuilder()
                     .setTitle(`Anime: ${animename}`)
                     .setURL(media.siteUrl)
-                    .setDescription(`${language.__n('global.description')}: ${description}`)
+                    .setDescription(`${getLocalizedMessage('global', 'description', interaction.locale)}: ${description}`)
                     .addFields(
-                        { name: `${language.__n('search.appears_episode')}`, value: `${episode}`, inline: true },
-                        { name: `${language.__n('search.similarity')}`, value: `${similarity} %`, inline: true }
+                        { name: `${getLocalizedMessage('search', 'appears_episode', interaction.locale)}`, value: `${episode}`, inline: true },
+                        { name: `${getLocalizedMessage('search', 'similarity', interaction.locale)}`, value: `${similarity} %`, inline: true }
                     )
                     .setImage(embedImage);
 
-                await interaction.editReply({ embeds: [embed] });
+                const row = new ActionRowBuilder()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setLabel(getLocalizedMessage('global', 'view_anilist', interaction.locale))
+                            .setURL(media.siteUrl)
+                            .setStyle(ButtonStyle.Link)
+                    );
+
+                await interaction.editReply({ embeds: [embed], components: [row] });
                 commandCooldown.set(interaction.user.id, Date.now());
             } else {
-                interaction.editReply(`${language.__n('global.error_reply')}`);
+                interaction.editReply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
             }
         } catch (error) {
-            console.error(`${language.__n('global.error')}`, error);
+            console.error(getLocalizedMessage('global', 'error'), error);
             if (interaction.replied || interaction.deferred) {
-                return interaction.editReply(`${language.__n('global.error_reply')}`);
+                return interaction.editReply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
             } else {
-                return interaction.reply(`${language.__n('global.error_reply')}`);
+                return interaction.reply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
             }
         }
     },

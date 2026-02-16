@@ -4,8 +4,7 @@ const { Routes } = require('discord-api-types/v10');
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
-const language = require('./language/language_setup.js');
-const { checkBan } = require('./bancheck.js');
+const { getLocalizedMessage } = require('./utils/localizations.js');
 
 dotenv.config();
 
@@ -28,17 +27,17 @@ for (const folder of commandFolders) {
     }
 }
 
-client.once('ready', async () => {
-    console.log(`${client.user.tag} ${language.__n(`global.ready`)}`);
-    console.log(`${language.__n(`global.waiting_command`)}`);
+client.once('clientReady', async () => {
+    console.log(`${client.user.tag} ${getLocalizedMessage('global', 'ready')}`);
+    console.log(`${getLocalizedMessage('global', 'waiting_command')}`);
     const commandsArray = commands.map(command => command.data.toJSON());
     const rest = new REST({ version: '10' }).setToken(token);
 
     try {
         await rest.put(Routes.applicationCommands(client.user.id), { body: commandsArray });
-        console.log(`${language.__n(`global.command_register`)}`);
+        console.log(`${getLocalizedMessage('global', 'command_register')}`);
     } catch (error) {
-        console.error(`${language.__n(`global.command_register_error`)}`, error);
+        console.error(`${getLocalizedMessage('global', 'command_register_error')}`, error);
     }
 });
 
@@ -50,34 +49,44 @@ require('./status.js');
 
 client.on('guildCreate', async (guild) => {
     try {
-        console.log(`${language.__n(`global.guild_join`)}: ${guild.name} (ID: ${guild.id}).`);
+        console.log(`${getLocalizedMessage('global', 'guild_join')}: ${guild.name} (ID: ${guild.id}).`);
 
         const commandsArray = commands.map(command => command.data.toJSON());
         const rest = new REST({ version: '10' }).setToken(token);
 
         await rest.put(Routes.applicationGuildCommands(client.user.id, guild.id), { body: commandsArray });
 
-        console.log(`${language.__n(`global.command_register`)}: ${guild.name} (ID: ${guild.id})`);
+        console.log(`${getLocalizedMessage('global', 'command_register')}: ${guild.name} (ID: ${guild.id})`);
     } catch (error) {
-        console.error(`${language.__n(`global.server_register_error`)} ${guild.name} (ID: ${guild.id})`, error);
+        console.error(`${getLocalizedMessage('global', 'server_register_error')} ${guild.name} (ID: ${guild.id})`, error);
     }
 });
 
 client.on('interactionCreate', async (interaction) => {
-    if (!interaction.isCommand()) return;
+    // slash command handle
+    if (interaction.isCommand()) {
+        const command = commands.get(interaction.commandName);
+        if (!command) return;
 
-    const { commandName } = interaction;
+        try {
+            await command.execute(interaction);
+        } catch (error) {
+            console.error(error);
+            if (!interaction.replied && !interaction.deferred) {
+                await interaction.reply(`${getLocalizedMessage('global', 'command_error', interaction.locale)}`);
+            }
+        }
+    }
+    
+    // autocomplete handle
+    else if (interaction.isAutocomplete()) {
+        const command = commands.get(interaction.commandName);
+        if (!command || !command.autocomplete) return;
 
-    const command = commands.get(commandName);
-    if (!command) return;
-
-    const isBanned = await checkBan(interaction);
-    if (isBanned) return;
-
-    try {
-        await command.execute(interaction);
-    } catch (error) {
-        console.error(error);
-        await interaction.reply(`${language.__n(`global.command_error`)}`);
+        try {
+            await command.autocomplete(interaction);
+        } catch (error) {
+            console.error('Error handling autocomplete:', error);
+        }
     }
 });

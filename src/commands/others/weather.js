@@ -1,13 +1,17 @@
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const weather = require('weather-js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder } = require('discord.js');
-const language = require('./../../language/language_setup.js');
+const { getLocalizedMessage, getCommandLocalization } = require('./../../utils/localizations.js');
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('weather')
-        .setDescription(`${language.__n('weather.command_description')}`)
-        .addStringOption(option => option.setName('location').setDescription(`${language.__n('weather.location')}`).setRequired(true)),
+    data: (() => {
+        const localization = getCommandLocalization('weather');
+        return new SlashCommandBuilder()
+            .setName(localization.name)
+            .setNameLocalizations(localization.nameLocalizations)
+            .setDescription(localization.description)
+            .setDescriptionLocalizations(localization.descriptionLocalizations)
+            .addStringOption(option => option.setName('location').setDescription(getLocalizedMessage('weather', 'location')).setRequired(true));
+    })(),
 
     async execute(interaction) {
         try {
@@ -17,11 +21,11 @@ module.exports = {
 
             weather.find({ search: location, degreeType: 'C' }, async function (error, result) {
                 if (error) {
-                    console.error(`${language.__n('global.error')}`, error);
-                    return interaction.editReply(`${language.__n('global.error_reply')}`);
+                    console.error(`${getLocalizedMessage('global', 'error', interaction.locale)}`, error);
+                    return interaction.editReply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
                 }
                 if (result === undefined || result.length === 0) {
-                    return interaction.editReply(`${language.__n('global.no_results')}`);
+                    return interaction.editReply(`${getLocalizedMessage('global', 'no_results', interaction.locale)}`);
                 }
 
                 const current = result[0].current;
@@ -34,42 +38,42 @@ module.exports = {
                     .setTimestamp()
                     .addFields(
                         {
-                            name: `${language.__n('weather.longitude')}`,
+                            name: getLocalizedMessage('weather', 'longitude', interaction.locale),
                             value: location.long,
                             inline: true,
                         },
                         {
-                            name: `${language.__n('weather.latitude')}`,
+                            name: getLocalizedMessage('weather', 'latitude', interaction.locale),
                             value: location.lat,
                             inline: true,
                         },
                         {
-                            name: `${language.__n('weather.degreetype')}`,
+                            name: getLocalizedMessage('weather', 'degreetype', interaction.locale),
                             value: `°${location.degreetype}`,
                             inline: true,
                         },
                         {
-                            name: `${language.__n('weather.current_temperature')}`,
+                            name: `${getLocalizedMessage('weather', 'current_temperature', interaction.locale)}`,
                             value: `${current.temperature}°${location.degreetype}`,
                             inline: true,
                         },
                         {
-                            name: `${language.__n('weather.feels_like')}`,
+                            name: `${getLocalizedMessage('weather', 'feels_like', interaction.locale)}`,
                             value: `${current.feelslike}°${location.degreetype}`,
                             inline: true,
                         },
                         {
-                            name: `${language.__n('weather.winddisplay')}`,
+                            name: `${getLocalizedMessage('weather', 'winddisplay', interaction.locale)}`,
                             value: `${current.winddisplay}`,
                             inline: true,
                         },
                         {
-                            name: `${language.__n('weather.humidity')}`,
+                            name: `${getLocalizedMessage('weather', 'humidity', interaction.locale)}`,
                             value: `${current.humidity}%`,
                             inline: true,
                         },
                         {
-                            name: `${language.__n('weather.observationtime')}`,
+                            name: `${getLocalizedMessage('weather', 'observationtime', interaction.locale)}`,
                             value: `${current.observationtime}, GMT ${location.timezone}`,
                             inline: true,
                         }
@@ -80,11 +84,11 @@ module.exports = {
                 await interaction.editReply({ embeds: [embed], ephemeral: true });
             });
         } catch (error) {
-            console.error(`${language.__n('global.error')}`, error);
+            console.error(`${getLocalizedMessage('global', 'error', interaction.locale)}`, error);
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply(`${language.__n('global.error_reply')}`);
+                await interaction.editReply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
             } else {
-                await interaction.reply(`${language.__n('global.error_reply')}`);
+                await interaction.reply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
             }
         }
     },

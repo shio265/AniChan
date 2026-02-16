@@ -1,6 +1,13 @@
-query($page: Int){
-    Page(page: $page, perPage: 50) {
-        media(sort: [SCORE_DESC, ID_DESC], type: ANIME) {
+query($page: Int, $sort: [MediaSort], $perPage: Int){
+    Page(page: $page, perPage: $perPage) {
+        pageInfo {
+            total
+            currentPage
+            lastPage
+            hasNextPage
+            perPage
+        }
+        media(sort: $sort, type: ANIME) {
         id
         title {
             romaji

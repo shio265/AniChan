@@ -1,14 +1,18 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder } = require('discord.js');
-const language = require('./../../language/language_setup.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { getLocalizedMessage, getCommandLocalization } = require('./../../utils/localizations.js');
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('avatar')
-        .setDescription(`${language.__n('avatar.command_description')}`)
+    data: (() => {
+        const localization = getCommandLocalization('avatar');
+        return new SlashCommandBuilder()
+            .setName(localization.name)
+            .setNameLocalizations(localization.nameLocalizations)
+            .setDescription(localization.description)
+            .setDescriptionLocalizations(localization.descriptionLocalizations);
+    })()
         .addUserOption(option =>
             option.setName('user')
-                .setDescription(`${language.__n('avatar.user_name')}`)
+                .setDescription(getLocalizedMessage('avatar', 'user_name'))
                 .setRequired(true)),
     async execute(interaction) {
         try {
@@ -24,18 +28,18 @@ module.exports = {
                 .setURL(avatar)
                 .setImage(avatar)
                 .setFooter({
-                    text: `${language.__n('avatar.requested_by')}: ${interaction.user.username}`,
+                    text: `${getLocalizedMessage('avatar', 'requested_by', interaction.locale)}: ${interaction.user.username}`,
                     iconURL: interaction.user.displayAvatarURL({ format: 'png', dynamic: true, size: 1024 })
                 })
                 .setColor('#eb3434');
 
             await interaction.editReply({ embeds: [embed] });
         } catch (error) {
-            console.error(`${language.__n('global.error')}`, error);
+            console.error(getLocalizedMessage('global', 'error'), error);
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply(`${language.__n('global.error_reply')}`);
+                await interaction.editReply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
             } else {
-                await interaction.reply(`${language.__n('global.error_reply')}`);
+                await interaction.reply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
             }
         }
     },

@@ -1,85 +1,86 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder } = require('discord.js');
-const axios = require('axios');
-const fs = require('fs');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const path = require('path');
-const language = require('./../../language/language_setup.js');
+const { getLocalizedMessage, getCommandLocalization } = require('./../../utils/localizations.js');
+const { parseHtmlText } = require('./../../utils/textParser.js');
+const { queryAnilistFromFile } = require('./../../hook/anilist.js');
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('manga')
-        .setDescription(`${language.__n('manga.command_description')}`)
-        .addStringOption(option => option.setName('name').setDescription(`${language.__n('manga.manga_name')}`).setRequired(true)),
+    data: (() => {
+        const localization = getCommandLocalization('manga');
+        return new SlashCommandBuilder()
+            .setName(localization.name)
+            .setNameLocalizations(localization.nameLocalizations)
+            .setDescription(localization.description)
+            .setDescriptionLocalizations(localization.descriptionLocalizations);
+    })()
+        .addStringOption(option => option.setName('name').setDescription(getLocalizedMessage('manga', 'manga_name')).setRequired(true)),
     async execute(interaction) {
         try {
             await interaction.deferReply();
 
             const mangaName = interaction.options.getString('name');
-            const query = fs.readFileSync(path.join(__dirname, '../../queries/manga.graphql'), 'utf8');
+            const queryPath = path.join(__dirname, '../../queries/manga.graphql');
             const variables = { name: mangaName };
 
-            const response = await axios.post('https://graphql.anilist.co', {
-                query: query,
-                variables: variables
-            }, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                }
-            });
-
-            const data = response.data;
+            const data = await queryAnilistFromFile(queryPath, variables);
             const mangaData = data.data.Media;
 
             if (!mangaData) {
-                return interaction.editReply(`${language.__n('global.no_results')} **${mangaName}**`);
+                return interaction.editReply(`${getLocalizedMessage('global', 'no_results', interaction.locale)} **${mangaName}**`);
             }
 
             const mangaGenre = mangaData.genres;
             if (mangaGenre.includes('Ecchi') || mangaGenre.includes('Hentai')) {
-                return interaction.editReply(`**${language.__n('global.nsfw_block')} ${mangaName}**\n${language.__n('global.nsfw_block_reason')}`);
+                return interaction.editReply(`**${getLocalizedMessage('global', 'nsfw_block', interaction.locale)} ${mangaName}**\n${getLocalizedMessage('global', 'nsfw_block_reason', interaction.locale)}`);
             }
 
-            const description = mangaData.description ? mangaData.description.slice(0, 500) + '...' : 'Không có thông tin.';
+            const description = parseHtmlText(mangaData.description, 500) || getLocalizedMessage('global', 'no_description', interaction.locale);
 
             const embedImage = "https://img.anili.st/media/" + mangaData.id;
-            console.log(embedImage);
             const embed = new EmbedBuilder()
                 .setTitle(mangaData.title.romaji)
                 .setURL(mangaData.siteUrl)
                 .setDescription(description)
                 .addFields(
                     {
-                        name: `${language.__n('global.chapters')}`,
-                        value: mangaData.chapters ? mangaData.chapters : `${language.__n('global.unavailable')}`,
+                        name: `${getLocalizedMessage('global', 'chapters', interaction.locale)}`,
+                        value: mangaData.chapters ? mangaData.chapters : `${getLocalizedMessage('global', 'unavailable', interaction.locale)}`,
                         inline: true
                     },
                     {
-                        name: `${language.__n('global.genres')}`,
+                        name: `${getLocalizedMessage('global', 'genres', interaction.locale)}`,
                         value: mangaData.genres.join(', '),
                         inline: true
                     },
                     {
-                        name: `${language.__n('global.average_score')}`,
+                        name: `${getLocalizedMessage('global', 'average_score', interaction.locale)}`,
                         value: `${mangaData.averageScore}/100`,
                         inline: true
                     },
                     {
-                        name: `${language.__n('global.mean_score')}`,
-                        value: `${mangaData.meanScore ? mangaData.meanScore + '/100' : `${language.__n('global.unavailable')}`}`,
+                        name: `${getLocalizedMessage('global', 'mean_score', interaction.locale)}`,
+                        value: `${mangaData.meanScore ? mangaData.meanScore + '/100' : `${getLocalizedMessage('global', 'unavailable', interaction.locale)}`}`,
                         inline: true
                     },
                 )
                 .setImage(embedImage)
                 .setTimestamp();
 
-            await interaction.editReply({ embeds: [embed] });
+            const row = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setLabel(getLocalizedMessage('global', 'view_anilist', interaction.locale))
+                        .setURL(mangaData.siteUrl)
+                        .setStyle(ButtonStyle.Link)
+                );
+
+            await interaction.editReply({ embeds: [embed], components: [row] });
         } catch (error) {
-            console.error(`${language.__n('global.error')}`, error);
+            console.error(getLocalizedMessage('global', 'error'), error);
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply(`${language.__n('global.error_reply')}`);
+                await interaction.editReply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
             } else {
-                await interaction.reply(`${language.__n('global.error_reply')}`);
+                await interaction.reply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
             }
         }
     },

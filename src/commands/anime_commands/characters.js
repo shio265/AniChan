@@ -1,44 +1,35 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder } = require('discord.js');
-const axios = require('axios');
-const fs = require('fs');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const path = require('path');
-const language = require('./../../language/language_setup.js');
+const { getLocalizedMessage, getCommandLocalization } = require('./../../utils/localizations.js');
+const { parseHtmlText } = require('./../../utils/textParser.js');
+const { queryAnilistFromFile } = require('./../../hook/anilist.js');
 
 module.exports = {
-  data: new SlashCommandBuilder()
-      .setName('characters')
-      .setDescription(`${language.__n('character.command_description')}`)
-      .addStringOption(option => option.setName('name').setDescription(`${language.__n('character.character_name')}`).setRequired(true)),
+  data: (() => {
+        const localization = getCommandLocalization('characters');
+        return new SlashCommandBuilder()
+            .setName(localization.name)
+            .setNameLocalizations(localization.nameLocalizations)
+            .setDescription(localization.description)
+            .setDescriptionLocalizations(localization.descriptionLocalizations);
+    })()
+      .addStringOption(option => option.setName('name').setDescription(getLocalizedMessage('character', 'character_name')).setRequired(true)),
   async execute(interaction) {
     try {
       await interaction.deferReply();
 
       const characterName = interaction.options.getString('name');
-      const query = fs.readFileSync(path.join(__dirname, '../../queries/characters.graphql'), 'utf8');
+      const queryPath = path.join(__dirname, '../../queries/characters.graphql');
       const variables = { search: characterName };
 
-      const response = await axios.post('https://graphql.anilist.co', {
-        query: query,
-        variables: variables
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        }
-      });
-
-      const data = response.data;
+      const data = await queryAnilistFromFile(queryPath, variables);
       const characterData = data.data.Character;
 
       if (!characterData) {
-        return interaction.editReply(`${language.__n('global.no_results')} **${characterName}**`);
+        return interaction.editReply(`${getLocalizedMessage('global', 'no_results', interaction.locale)} **${characterName}**`);
       }
 
-      let description = characterData.description || `${language.__n('global.no_description')}`;
-      if (description && description.length > 600) {
-        description = description.slice(0, 600) + '...';
-      }
+      const description = parseHtmlText(characterData.description, 600) || getLocalizedMessage('global', 'no_description', interaction.locale);
 
       const uniqueAnimeAppearances = [...new Set(characterData.media.nodes.map(node => node.title.romaji))];
 
@@ -46,18 +37,26 @@ module.exports = {
           .setTitle(characterData.name.full)
           .setURL(characterData.siteUrl)
           .setDescription(description)
-          .addFields({ name: `${language.__n('character.anime_appearances')}`, value: uniqueAnimeAppearances.join(', ') || `${language.__n('global.no_results')}` })
+          .addFields({ name: `${getLocalizedMessage('character', 'anime_appearances', interaction.locale)}`, value: uniqueAnimeAppearances.join(', ') || `${getLocalizedMessage('global', 'no_results', interaction.locale)}` })
           .setImage(characterData.image.large)
           .setColor('#C6FFFF')
           .setTimestamp();
 
-      await interaction.editReply({ embeds: [embed] });
+      const row = new ActionRowBuilder()
+          .addComponents(
+              new ButtonBuilder()
+                  .setLabel(getLocalizedMessage('global', 'view_anilist', interaction.locale))
+                  .setURL(characterData.siteUrl)
+                  .setStyle(ButtonStyle.Link)
+          );
+
+      await interaction.editReply({ embeds: [embed], components: [row] });
     } catch (error) {
-      console.error(`${language.__n('global.error')}`, error);
+      console.error(getLocalizedMessage('global', 'error'), error);
       if (interaction.replied || interaction.deferred) {
-        await interaction.editReply(`${language.__n('global.error_reply')}`);
+        await interaction.editReply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
       } else {
-        await interaction.reply(`${language.__n('global.error_reply')}`);
+        await interaction.reply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
       }
     }
   },

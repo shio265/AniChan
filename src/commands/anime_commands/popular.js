@@ -1,56 +1,56 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const axios = require('axios');
-const fs = require('fs');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const path = require('path');
-const language = require('./../../language/language_setup.js');
+const { getLocalizedMessage, getCommandLocalization } = require('./../../utils/localizations.js');
+const { parseHtmlText } = require('./../../utils/textParser.js');
+const { queryAnilistFromFile } = require('./../../hook/anilist.js');
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('popular')
-        .setDescription(`${language.__n('popular.command_description')}`),
+    data: (() => {
+        const localization = getCommandLocalization('popular');
+        return new SlashCommandBuilder()
+            .setName(localization.name)
+            .setNameLocalizations(localization.nameLocalizations)
+            .setDescription(localization.description)
+            .setDescriptionLocalizations(localization.descriptionLocalizations);
+    })(),
     async execute(interaction) {
         try {
             await interaction.deferReply();
+            const queryPath = path.join(__dirname, '../../queries/popular.graphql');
 
-            const query = fs.readFileSync(path.join(__dirname, '../../queries/popular.graphql'), 'utf8');
+            const data = await queryAnilistFromFile(queryPath, {});
 
-            const response = await axios.post('https://graphql.anilist.co', {
-                query: query
-            }, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                }
-            });
-
-            const data = response.data;
             const popularAnime = data.data.Page.media;
             let currentPage = 0;
 
             const updateEmbed = () => {
                 const anime = popularAnime[currentPage];
-                const description = anime.description ? anime.description.replace(/<[^>]+>/g, '').slice(0, 250) + '...' : `${language.__n('global.unavailable')}`;
+                const description = parseHtmlText(anime.description, 250) || getLocalizedMessage('global', 'unavailable', interaction.locale);
                 const embedImage = "https://img.anili.st/media/" + anime.id;
                 const embed = new EmbedBuilder()
                     .setTitle(anime.title.romaji)
                     .setURL(anime.siteUrl)
-                    .setDescription(`__**${language.__n('global.description')}:**__ ${description}\n__**${language.__n('global.average_score')}:**__ ${anime.averageScore}/100\n__**${language.__n('global.mean_score')}:**__ ${anime.meanScore ? anime.meanScore + '/100' : `${language.__n('global.unavailable')}`}\n\n__**${language.__n('global.page')}:**__ ${currentPage + 1}/${popularAnime.length}`)
+                    .setDescription(`__**${getLocalizedMessage('global', 'description', interaction.locale)}:**__ ${description}\n__**${getLocalizedMessage('global', 'average_score', interaction.locale)}:**__ ${anime.averageScore}/100\n__**${getLocalizedMessage('global', 'mean_score', interaction.locale)}:**__ ${anime.meanScore ? anime.meanScore + '/100' : `${getLocalizedMessage('global', 'unavailable', interaction.locale)}`}`)
                     .setImage(embedImage)
+                    .setFooter({ text: `${getLocalizedMessage('global', 'page', interaction.locale)}: ${currentPage + 1}/${popularAnime.length}` })
                     .setTimestamp();
 
                 const row = new ActionRowBuilder()
                     .addComponents(
                         new ButtonBuilder()
                             .setCustomId('prev')
-                            .setLabel(`${language.__n('global.preview_button')}`)
+                            .setLabel(`${getLocalizedMessage('global', 'preview_button', interaction.locale)}`)
                             .setStyle(ButtonStyle.Primary)
                             .setDisabled(currentPage === 0),
                         new ButtonBuilder()
                             .setCustomId('next')
-                            .setLabel(`${language.__n('global.next_button')}`)
+                            .setLabel(`${getLocalizedMessage('global', 'next_button', interaction.locale)}`)
                             .setStyle(ButtonStyle.Primary)
-                            .setDisabled(currentPage === popularAnime.length - 1)
+                            .setDisabled(currentPage === popularAnime.length - 1),
+                        new ButtonBuilder()
+                            .setLabel(getLocalizedMessage('global', 'view_anilist', interaction.locale))
+                            .setURL(anime.siteUrl)
+                            .setStyle(ButtonStyle.Link)
                     );
 
                 return { embeds: [embed], components: [row] };
@@ -74,15 +74,15 @@ module.exports = {
                 try {
                     await interaction.editReply({ components: [] });
                 } catch (error) {
-                    console.error(`${language.__n('global.error')}`, error);
+                    console.error(getLocalizedMessage('global', 'error'), error);
                 }
             });
         } catch (error) {
-            console.error(`${language.__n('global.error')}`, error);
+            console.error(getLocalizedMessage('global', 'error'), error);
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply(`${language.__n('global.error_reply')}`);
+                await interaction.editReply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
             } else {
-                await interaction.reply(`${language.__n('global.error_reply')}`);
+                await interaction.reply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
             }
         }
     },
