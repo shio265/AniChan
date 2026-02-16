@@ -1,6 +1,6 @@
 {
   "name": "anichan",
-  "version": "2025.9.x",
+  "version": "2026.2.x",
   "description": "",
   "main": "./src/index.js",
   "scripts": {
@@ -22,6 +22,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "bun": "^1.3.9",
     "eslint": "^10.0.0",
     "globals": "^17.3.0",
     "nodemon": "^3.1.11"
