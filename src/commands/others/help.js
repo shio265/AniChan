@@ -30,8 +30,16 @@ module.exports = {
 
                 for (const file of commandFiles) {
                     const filePath = path.join(folderPath, file);
-                    const command = require(filePath);
-                    embed.addFields({ name: command.data.name, value: command.data.description });
+                    try {
+                        const command = require(filePath);
+                        if (!command?.data?.name || !command?.data?.description) {
+                            console.warn(`Warning: Invalid command module structure: ${filePath}`);
+                            continue;
+                        }
+                        embed.addFields({ name: command.data.name, value: command.data.description });
+                    } catch (loadError) {
+                        console.error(`Failed to load command: ${filePath}`, loadError.message);
+                    }
                 }
             }
 

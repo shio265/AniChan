@@ -4,6 +4,12 @@ dotenv.config();
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 const { getLocalizedMessage } = require('./utils/localizations.js');
 
+const token = process.env.BOT_TOKEN;
+if (!token) {
+    console.error('ERROR: BOT_TOKEN not found in .env file! Please check your .env configuration.');
+    process.exit(1);
+}
+
 const activities = [
   { type: ActivityType.Watching, text: 'anime' },
   { type: ActivityType.Watching, text: 'anilist.co' },
@@ -24,4 +30,7 @@ client.once('clientReady', () => {
   }, 10 * 60 * 1000);
 });
 
-client.login(process.env.BOT_TOKEN);
+client.login(token).catch(error => {
+    console.error('Failed to set bot status:', error.message);
+    process.exit(1);
+});

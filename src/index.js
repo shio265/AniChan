@@ -14,6 +14,11 @@ const client = new Client({
 });
 const token = process.env.BOT_TOKEN;
 
+if (!token) {
+    console.error('ERROR: BOT_TOKEN not set. Please check your configuration.');
+    process.exit(1);
+}
+
 const commands = new Collection();
 const commandsDirectory = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(commandsDirectory);
@@ -42,13 +47,22 @@ client.once('clientReady', async () => {
 });
 
 (async () => {
-    await client.login(token);
+    try {
+        await client.login(token);
+    } catch (error) {
+        console.error('Failed to login to Discord:', error.message);
+        process.exit(1);
+    }
 })();
 
 require('./status.js');
 
 client.on('guildCreate', async (guild) => {
     try {
+        if (!guild || !guild.id) {
+            console.error('Invalid guild object received in guildCreate event');
+            return;
+        }
         console.log(`${getLocalizedMessage('global', 'guild_join')}: ${guild.name} (ID: ${guild.id}).`);
 
         const commandsArray = commands.map(command => command.data.toJSON());

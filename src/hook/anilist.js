@@ -49,9 +49,16 @@ async function queryAnilist(query, variables = {}, options = {}) {
  * @returns {Promise<Object>} Response data
  */
 async function queryAnilistFromFile(queryFilePath, variables = {}, options = {}) {
-    const fs = require('fs');
-    const query = fs.readFileSync(queryFilePath, 'utf8');
-    return queryAnilist(query, variables, options);
+    const fs = require('fs').promises;
+    try {
+        const query = await fs.readFile(queryFilePath, 'utf8');
+        return queryAnilist(query, variables, options);
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            throw new Error(`GraphQL query file not found: ${queryFilePath}`, { cause: error });
+        }
+        throw new Error(`Failed to read GraphQL query file: ${queryFilePath}`, { cause: error });
+    }
 }
 
 module.exports = {
