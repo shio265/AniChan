@@ -1,0 +1,12 @@
+services:
+  anichan:
+    build: .
+    image: anichan:latest
+    container_name: anichan
+    restart: unless-stopped
+    # env_file:
+    #   - .env
+    environment:
+      - BOT_TOKEN=Your bot token here
+      - CLIENT_ID=Your client id here
+      - API_URL=https://graphql.anilist.co

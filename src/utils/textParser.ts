@@ -1,10 +1,4 @@
-/**
- * Parse and clean HTML content from AniList API responses
- * @param {string} text - Raw text with HTML tags
- * @param {number} maxLength - Maximum length to truncate to (optional)
- * @returns {string} Cleaned text
- */
-function parseHtmlText(text, maxLength = null) {
+export function parseHtmlText(text?: string | null, maxLength: number | null = null): string {
     if (!text) return '';
     
     let cleaned = text;
@@ -27,8 +21,8 @@ function parseHtmlText(text, maxLength = null) {
         .replace(/&#039;/g, "'")
         .replace(/&apos;/g, "'")
         .replace(/&nbsp;/g, ' ')
-        .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))
-        .replace(/&#x([0-9a-f]+);/gi, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
+        .replace(/&#(\d+);/g, (_match, dec) => String.fromCharCode(dec))
+        .replace(/&#x([0-9a-f]+);/gi, (_match, hex) => String.fromCharCode(parseInt(hex, 16)));
     
     // Remove excessive newlines (more than 2 consecutive)
     cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
@@ -54,7 +48,3 @@ function parseHtmlText(text, maxLength = null) {
     
     return cleaned;
 }
-
-module.exports = {
-    parseHtmlText
-};

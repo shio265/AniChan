@@ -1,4 +1,14 @@
-const commandLocalizations = {
+type Locale = 'en' | 'vi';
+type LocalizationMap = Record<string, string>;
+
+export type CommandLocalization = {
+    name: string;
+    nameLocalizations: LocalizationMap;
+    description: string;
+    descriptionLocalizations: LocalizationMap;
+};
+
+export const commandLocalizations: Record<string, CommandLocalization> = {
     // Help command
     help: {
         name: 'help',
@@ -220,7 +230,7 @@ const commandLocalizations = {
 };
 
 // Response messages
-const responseMessages = {
+export const responseMessages: Record<string, Partial<Record<Locale, LocalizationMap>>> = {
     global: {
         en: {
             tracemoe_api_limit: "Because of the trace.moe server's limited requirements, you can only use this command once every 60 minutes.",
@@ -586,7 +596,7 @@ const responseMessages = {
  * @param {string} locale - Discord locale ('en-US', 'vi')
  * @returns {string} Localized message
  */
-function getLocalizedMessage(section, key, locale = 'en-US') {
+export function getLocalizedMessage(section: string, key: string, locale = 'en-US'): string {
     // Convert locale
     const lang = locale.startsWith('vi') ? 'vi' : 'en';
     
@@ -607,7 +617,7 @@ function getLocalizedMessage(section, key, locale = 'en-US') {
  * @param {string} commandName - Name of the command
  * @returns {Object} Command localization data
  */
-function getCommandLocalization(commandName) {
+export function getCommandLocalization(commandName: string): CommandLocalization {
     return commandLocalizations[commandName] || {
         name: commandName,
         description: `Command: ${commandName}`,
@@ -615,10 +625,3 @@ function getCommandLocalization(commandName) {
         descriptionLocalizations: {}
     };
 }
-
-module.exports = {
-    commandLocalizations,
-    responseMessages,
-    getLocalizedMessage,
-    getCommandLocalization
-};

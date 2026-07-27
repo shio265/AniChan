@@ -1,8 +1,9 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const weather = require('weather-js');
-const { getLocalizedMessage, getCommandLocalization } = require('./../../utils/localizations.js');
+import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import weather from 'weather-js';
+import { handleInteractionError } from '../../handlers/errorHandler.js';
+import { getCommandLocalization, getLocalizedMessage } from './../../utils/localizations.js';
 
-module.exports = {
+export default {
     data: (() => {
         const localization = getCommandLocalization('weather');
         return new SlashCommandBuilder()
@@ -21,8 +22,7 @@ module.exports = {
 
             weather.find({ search: location, degreeType: 'C' }, async function (error, result) {
                 if (error) {
-                    console.error(`${getLocalizedMessage('global', 'error', interaction.locale)}`, error);
-                    return interaction.editReply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
+                    return handleInteractionError(error, interaction);
                 }
                 if (result === undefined || result.length === 0) {
                     return interaction.editReply(`${getLocalizedMessage('global', 'no_results', interaction.locale)}`);
@@ -84,12 +84,7 @@ module.exports = {
                 await interaction.editReply({ embeds: [embed], ephemeral: true });
             });
         } catch (error) {
-            console.error(`${getLocalizedMessage('global', 'error', interaction.locale)}`, error);
-            if (interaction.replied || interaction.deferred) {
-                await interaction.editReply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
-            } else {
-                await interaction.reply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
-            }
+            await handleInteractionError(error, interaction);
         }
     },
 };

@@ -1,9 +1,14 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const path = require('path');
-const { getLocalizedMessage, getCommandLocalization } = require('./../../utils/localizations.js');
-const { queryAnilistFromFile } = require('./../../hook/anilist.js');
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { handleInteractionError } from '../../handlers/errorHandler.js';
+import { getCommandLocalization, getLocalizedMessage } from './../../utils/localizations.js';
+import { queryAnilistFromFile } from './../../hook/anilist.js';
+import { uniqueMediaTitles } from './../../utils/media.js';
 
-module.exports = {
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+export default {
   data: (() => {
         const localization = getCommandLocalization('character_search');
         return new SlashCommandBuilder()
@@ -33,8 +38,12 @@ module.exports = {
           .setDescription(`${getLocalizedMessage('character_search', 'anime_list', interaction.locale)} **${characterData.name.full}**:`)
           .setTimestamp();
 
-      characterData.media.nodes.forEach(anime => {
-        const animeTitle = anime.title.romaji || `${getLocalizedMessage('global', 'unavailable', interaction.locale)}`;
+      const animeTitles = uniqueMediaTitles(
+        characterData.media.nodes,
+        getLocalizedMessage('global', 'unavailable', interaction.locale),
+      );
+
+      animeTitles.forEach(animeTitle => {
         embed.addFields({ name: animeTitle, value: '\u200B', inline: false });
       });
 
@@ -48,12 +57,7 @@ module.exports = {
 
       await interaction.editReply({ embeds: [embed], components: [row] });
     } catch (error) {
-      console.error(getLocalizedMessage('global', 'error'), error);
-      if (interaction.replied || interaction.deferred) {
-        await interaction.editReply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
-      } else {
-        await interaction.reply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
-      }
+      await handleInteractionError(error, interaction);
     }
   },
 };

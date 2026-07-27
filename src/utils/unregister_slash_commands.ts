@@ -1,6 +1,8 @@
-const { REST } = require('@discordjs/rest');
-const { Routes } = require('discord.js');
-require('dotenv').config();
+import { REST } from '@discordjs/rest';
+import { Routes } from 'discord.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const token = process.env.BOT_TOKEN;
 const clientId = process.env.CLIENT_ID;
@@ -27,7 +29,8 @@ const rest = new REST({ version: '10' }).setToken(token);
         process.exit(0);
 
     } catch (error) {
-        console.error('Error removing slash commands:', error.message || error);
+        const message = error instanceof Error ? error.message : error;
+        console.error('Error removing slash commands:', message);
         process.exit(1);
     }
 })();

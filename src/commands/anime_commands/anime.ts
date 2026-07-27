@@ -1,10 +1,14 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const path = require('path');
-const { getLocalizedMessage, getCommandLocalization } = require('./../../utils/localizations.js');
-const { parseHtmlText } = require('./../../utils/textParser.js');
-const { queryAnilistFromFile } = require('./../../hook/anilist.js');
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { handleInteractionError } from '../../handlers/errorHandler.js';
+import { getCommandLocalization, getLocalizedMessage } from './../../utils/localizations.js';
+import { queryAnilistFromFile } from './../../hook/anilist.js';
+import { parseHtmlText } from './../../utils/textParser.js';
 
-module.exports = {
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+export default {
   data: (() => {
     const localization = getCommandLocalization('anime');
     return new SlashCommandBuilder()
@@ -64,13 +68,7 @@ module.exports = {
 
       await interaction.editReply({ embeds: [embed], components: [row] });
     } catch (error) {
-      console.error(getLocalizedMessage('global', 'error'), error);
-      const errorMessage = getLocalizedMessage('global', 'error_reply', interaction.locale);
-      if (interaction.replied || interaction.deferred) {
-        await interaction.editReply(errorMessage);
-      } else {
-        await interaction.reply(errorMessage);
-      }
+      await handleInteractionError(error, interaction);
     }
   },
 };

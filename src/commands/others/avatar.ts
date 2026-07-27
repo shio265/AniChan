@@ -1,7 +1,8 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { getLocalizedMessage, getCommandLocalization } = require('./../../utils/localizations.js');
+import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { handleInteractionError } from '../../handlers/errorHandler.js';
+import { getCommandLocalization, getLocalizedMessage } from './../../utils/localizations.js';
 
-module.exports = {
+export default {
     data: (() => {
         const localization = getCommandLocalization('avatar');
         return new SlashCommandBuilder()
@@ -35,12 +36,7 @@ module.exports = {
 
             await interaction.editReply({ embeds: [embed] });
         } catch (error) {
-            console.error(getLocalizedMessage('global', 'error'), error);
-            if (interaction.replied || interaction.deferred) {
-                await interaction.editReply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
-            } else {
-                await interaction.reply(`${getLocalizedMessage('global', 'error_reply', interaction.locale)}`);
-            }
+            await handleInteractionError(error, interaction);
         }
     },
 };
