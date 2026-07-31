@@ -27,6 +27,9 @@ export default {
 
       const trendingAnime = data.data.Page.media;
       let currentPage = 0;
+      const sessionId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      const prevId = `${sessionId}_prev`;
+      const nextId = `${sessionId}_next`;
 
       const updateEmbed = () => {
         const anime = trendingAnime[currentPage];
@@ -43,12 +46,12 @@ export default {
         const row = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
-                    .setCustomId('prev')
+                    .setCustomId(prevId)
                     .setLabel(`${getLocalizedMessage('global', 'preview_button', interaction.locale)}`)
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(currentPage === 0),
                 new ButtonBuilder()
-                    .setCustomId('next')
+                    .setCustomId(nextId)
                     .setLabel(`${getLocalizedMessage('global', 'next_button', interaction.locale)}`)
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(currentPage === trendingAnime.length - 1),
@@ -63,13 +66,13 @@ export default {
 
       await interaction.editReply(updateEmbed());
 
-      const filter = i => i.customId === 'prev' || i.customId === 'next';
+      const filter = i => i.customId === prevId || i.customId === nextId;
       const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
 
       collector.on('collect', async i => {
-        if (i.customId === 'prev' && currentPage > 0) {
+        if (i.customId === prevId && currentPage > 0) {
           currentPage--;
-        } else if (i.customId === 'next' && currentPage < trendingAnime.length - 1) {
+        } else if (i.customId === nextId && currentPage < trendingAnime.length - 1) {
           currentPage++;
         }
         await i.update(updateEmbed());

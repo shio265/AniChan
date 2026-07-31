@@ -96,28 +96,6 @@ export const commandLocalizations: Record<string, CommandLocalization> = {
         }
     },
 
-    schedule: {
-        name: 'schedule',
-        nameLocalizations: {
-            vi: 'lịch-phát'
-        },
-        description: 'Get the airing schedule for a specific season.',
-        descriptionLocalizations: {
-            vi: 'Lấy lịch phát sóng anime.'
-        }
-    },
-
-    search: {
-        name: 'search',
-        nameLocalizations: {
-            vi: 'tìm-kiếm'
-        },
-        description: 'Search anime by image. (Supports maximum file size of 25MB)',
-        descriptionLocalizations: {
-            vi: 'Tìm kiếm anime bằng hình ảnh. (Hỗ trợ dung lượng ảnh tối đa 25MB)'
-        }
-    },
-
     staff: {
         name: 'staff',
         nameLocalizations: {
@@ -191,6 +169,17 @@ export const commandLocalizations: Record<string, CommandLocalization> = {
         description: 'Get the weather for a specific location.',
         descriptionLocalizations: {
             vi: 'Xem thông tin thời tiết của một địa điểm cụ thể.'
+        }
+    },
+
+    nsfwfilter: {
+        name: 'nsfwfilter',
+        nameLocalizations: {
+            vi: 'bộ-lọc'
+        },
+        description: 'Enable or disable the NSFW filter for this server.',
+        descriptionLocalizations: {
+            vi: 'Bật hoặc tắt bộ lọc NSFW cho máy chủ này.'
         }
     },
 
@@ -302,6 +291,21 @@ export const responseMessages: Record<string, Partial<Record<Locale, Localizatio
         }
     },
     
+    nsfwfilter: {
+        en: {
+            enabled_option: "Whether the NSFW filter should be enabled",
+            no_guild: "This command can only be used in a server.",
+            enabled_message: "The NSFW filter has been **enabled** for this server. Adult content will be blocked in search results.",
+            disabled_message: "The NSFW filter has been **disabled** for this server. Adult content is no longer blocked."
+        },
+        vi: {
+            enabled_option: "Bộ lọc NSFW có được bật hay không",
+            no_guild: "Lệnh này chỉ có thể sử dụng trong máy chủ.",
+            enabled_message: "Bộ lọc NSFW đã được **bật** cho máy chủ này. Nội dung người lớn sẽ bị chặn trong kết quả tìm kiếm.",
+            disabled_message: "Bộ lọc NSFW đã được **tắt** cho máy chủ này. Nội dung người lớn không còn bị chặn."
+        }
+    },
+    
     anime: {
         en: {
             anime_name: "Anime name"
@@ -369,38 +373,6 @@ export const responseMessages: Record<string, Partial<Record<Locale, Localizatio
         vi: {
             staff_name: "Tên nhân viên",
             staff_info: "Thông tin Nhân viên"
-        }
-    },
-
-    schedule: {
-        en: {
-            airing_schedule: "Airing Schedule"
-        },
-        vi: {
-            airing_schedule: "Lịch Phát Sóng"
-        }
-    },
-
-    search: {
-        en: {
-            image_option: "Search by image",
-            image_link: "Image URL",
-            upload_image: "Upload image",
-            cut_black_borders: "Cut black borders",
-            similarity: "Similarity",
-            appears_episode: "Appears in episode: ",
-            file_too_large: "File too large. Maximum file size is 25MB.",
-            tracemoe_api_limit: "The request limit for the trace.moe server has been reached. Please try again later."
-        },
-        vi: {
-            image_option: "Tìm kiếm bằng hình ảnh",
-            image_link: "Liên kết ảnh",
-            upload_image: "Tải ảnh lên",
-            cut_black_borders: "Cắt viền đen",
-            similarity: "Tỉ lệ trùng khớp",
-            appears_episode: "Xuất hiện trong tập: ",
-            file_too_large: "Dung lượng ảnh quá lớn. Vui lòng thử lại với ảnh có dung lượng nhỏ hơn 25MB.",
-            tracemoe_api_limit: "Đã đạt giới hạn yêu cầu đến máy chủ trace.moe. Vui lòng thử lại sau."
         }
     },
 

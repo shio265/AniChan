@@ -6,13 +6,13 @@ import characters from '../commands/anime_commands/characters.js';
 import charactersearch from '../commands/anime_commands/charactersearch.js';
 import manga from '../commands/anime_commands/manga.js';
 import popular from '../commands/anime_commands/popular.js';
-import schedule from '../commands/anime_commands/schedule.js';
 import staff from '../commands/anime_commands/staff.js';
 import studio from '../commands/anime_commands/studio.js';
 import trending from '../commands/anime_commands/trending.js';
 import user from '../commands/anime_commands/user.js';
 import avatar from '../commands/others/avatar.js';
 import help from '../commands/others/help.js';
+import nsfwfilter from '../commands/others/nsfwfilter.js';
 import weather from '../commands/others/weather.js';
 import { getLocalizedMessage } from '../utils/localizations.js';
 import { handleInteractionError } from './errorHandler.js';
@@ -32,13 +32,13 @@ const commandModules: BotCommand[] = [
     charactersearch,
     manga,
     popular,
-    schedule,
     staff,
     studio,
     trending,
     user,
     avatar,
     help,
+    nsfwfilter,
     weather,
 ];
 

@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { handleInteractionError } from '../../handlers/errorHandler.js';
 import { getCommandLocalization, getLocalizedMessage } from './../../utils/localizations.js';
 import { queryAnilistFromFile } from './../../hook/anilist.js';
+import { replyNSFWBlocked } from './../../hook/nsfw.js';
 import { parseHtmlText } from './../../utils/textParser.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -33,10 +34,7 @@ export default {
                 return interaction.editReply(`${getLocalizedMessage('global', 'no_results', interaction.locale)} **${mangaName}**`);
             }
 
-            const mangaGenre = mangaData.genres;
-            if (mangaGenre.includes('Ecchi') || mangaGenre.includes('Hentai')) {
-                return interaction.editReply(`**${getLocalizedMessage('global', 'nsfw_block', interaction.locale)} ${mangaName}**\n${getLocalizedMessage('global', 'nsfw_block_reason', interaction.locale)}`);
-            }
+            if (await replyNSFWBlocked(interaction, mangaData.genres, mangaName)) return;
 
             const description = parseHtmlText(mangaData.description, 500) || getLocalizedMessage('global', 'no_description', interaction.locale);
 

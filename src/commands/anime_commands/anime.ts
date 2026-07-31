@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { handleInteractionError } from '../../handlers/errorHandler.js';
 import { getCommandLocalization, getLocalizedMessage } from './../../utils/localizations.js';
 import { queryAnilistFromFile } from './../../hook/anilist.js';
+import { replyNSFWBlocked } from './../../hook/nsfw.js';
 import { parseHtmlText } from './../../utils/textParser.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -33,10 +34,7 @@ export default {
         return interaction.editReply(`${getLocalizedMessage('global', 'no_results', interaction.locale)} **${animeName}**`);
       }
 
-      const genres = animeData.genres;
-      if (genres.includes('Ecchi') || genres.includes('Hentai')) {
-        return interaction.editReply(`**${getLocalizedMessage('global', 'nsfw_block', interaction.locale)} ${animeName}**\n${getLocalizedMessage('global', 'nsfw_block_reason', interaction.locale)}`);
-      }
+      if (await replyNSFWBlocked(interaction, animeData.genres, animeName)) return;
 
       const description = parseHtmlText(animeData.description, 600);
 

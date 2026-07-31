@@ -4,9 +4,14 @@ services:
     image: anichan:latest
     container_name: anichan
     restart: unless-stopped
-    # env_file:
-    #   - .env
-    environment:
-      - BOT_TOKEN=Your bot token here
-      - CLIENT_ID=Your client id here
-      - API_URL=https://graphql.anilist.co
+    env_file:
+      - .env
+    volumes:
+      - anichan-data:/app/data
+    # environment:
+    #   - BOT_TOKEN=Your bot token here
+    #   - CLIENT_ID=Your client id here
+    #   - API_URL=https://graphql.anilist.co
+
+volumes:
+  anichan-data:

@@ -1,72 +1,77 @@
 # Overview
 
-AniChan is a TypeScript Discord bot for browsing AniList. You can search for anime, light novels, get user stats, and more.
+AniChan is a TypeScript Discord bot for browsing AniList. You can search for anime, manga, get user stats, and more.
 
 ## Install
 
-### Requirements:
-- [Discord.js v14](https://www.npmjs.com/package/discord.js/v/14.16.3)
-- [Bun](https://bun.sh/) 1.3 or newer
+### Requirements
 
-### Install
+- [Discord.js v14](https://discord.js.org/)
+- [Bun](https://bun.sh/) >= 1.3 or other [Javascript/Typescript Runtime](https://github.com/JohnDeved/awesome-typescript-compilers#runtimes)
+
+### Setup
+
 - Clone the repository: `git clone https://github.com/Anichan-Projects/AniChan.git`
 
 - Install dependencies: `bun install`
 
-- Edit the variables in the `.env-exmaple` file then rename the file to `.env`
+- Edit the variables in the `.env-example` file then rename the file to `.env`
 
-- Start the bot with the command: `bun run start` or `bun ./src/index.ts`
+- Build and start the bot: `bun run build` then `bun run start`, or run directly with `bun ./src/index.ts`
 
 - For debugging: use the command: `bun run debug`
 
+### Docker
+
+- Build and run with Docker Compose: `docker compose up -d --build`
+
+- Per-guild settings (such as the NSFW filter toggle) are persisted in the `anichan-data` volume.
+
 ### Features
 
-- Search for and display info about anime, light novels, and trending anime from AniList
+- Search for and display info about anime, manga, and trending anime from AniList
 - Search for the names of anime with the appearance of a certain character
 - Show AniList user stats
 - Show trending anime
 - Get information about anime characters
 - Get information about a studio and staff
-- Get weather infomation
-- Get avtar user
-- Anime image source finder
+- Get weather information
+- Get user avatar
+- Toggle the Ecchi/Hentai content filter per server
 
 And many other features.
 
-# Commands
+## Commands
+
 ## Anime Commands
+
 - `/user`: Get AniList user stats.
-- `/search image url`: Search for anime names using links to images.
-- `/search image upload`: Search for anime names using upload images.
 - `/manga`: Search for manga.
 - `/anime`: Search for anime.
-- `/character_search`: Search for the names of anime with the appearance of a certain character.
-- `/character`: Get information about anime characters.
+- `/charactersearch`: Search for the names of anime with the appearance of a certain character.
+- `/characters`: Get information about anime characters.
 - `/trending`: Show trending anime.
 - `/studio`: Get information about a studio.
 - `/staff`: Get basic information about staff.
 - `/popular`: Get the list of popular anime.
 
 ## Other Commands
+
 - `/help`: Get bot command list.
-- `/stats`: Get bot stats.
 - `/avatar`: Get user avatar.
-- `/ascii`: Convert text to ASCII code.
-- `/weather`: Get weather infomation.
-- `/switch_language`: Switch bot language. Default is English (EN) (owner only use this command).
+- `/weather`: Get weather information.
+- `/nsfwfilter`: Enable or disable the Ecchi/Hentai filter for this server (requires Manage Server permission).
 
-# Issues
+## Issues
 
-Open issue [here](https://github.com/Anichan-Projects/AniChan/issues) or [join the discord server](https://discord.gg/PE29XWTTc5)
+[Open issue](https://github.com/Anichan-Projects/AniChan/issues) or [join the discord server](https://discord.gg/PE29XWTTc5)
 
-# Attribution
+## Attribution
 
-✨ [AniList](https://anilist.co) & [AniChart](https://anichart.net)
+- [AniList](https://anilist.co) & [AniChart](https://anichart.net)
+- [GraphQL](https://graphql.org)
 
-✨ [GraphQL](https://graphql.org)
-
-
-# License
+## License
 
 AniChan is an open-source project under the [MIT License](https://en.wikipedia.org/wiki/MIT_License) that allows you to modify the code used for:
 

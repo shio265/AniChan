@@ -8,13 +8,13 @@ const commandNames = [
     'character_search',
     'manga',
     'popular',
-    'schedule',
     'staff',
     'studio',
     'trending',
     'user',
     'avatar',
     'help',
+    'nsfwfilter',
     'weather',
 ];
 
